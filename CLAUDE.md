@@ -76,6 +76,13 @@ GitHub Actions (`.github/workflows/ci.yml`) runs on every push to `main` and eve
 
 Conventional Commits, enforced by commitlint via the `commit-msg` hook — same format and types as the blog repo (`feat`, `fix`, `docs`, `refactor`, `test`, `chore`, etc.), e.g. `feat(collections): add Tenants collection`.
 
+## Documentation
+
+Payload ships breaking changes frequently, and this template's `main`-branch source can drift ahead of (or behind) whatever version is actually pinned/installed — this isn't hypothetical: the initial scaffold shipped with a `payload build` CLI command that no longer exists in 3.87.x, a `storage` config field that had moved into `plugins`, and an export (`generatePayloadViewport`) that had been removed, all caught only by actually running `typecheck`/`build` rather than trusting the scaffold. Before relying on a Payload API shape from memory or from what an older example shows, check it against the current installed version:
+
+- Search `payloadcms.com/docs` (via `WebSearch`/`WebFetch`) for the API in question.
+- Cross-check against `node_modules/payload/package.json`'s `version` and the relevant package's own `.d.ts`/`exports` map when something doesn't typecheck — that's the ground truth for what's actually installed, faster than searching when the docs and installed version disagree.
+
 ## Project Tracking
 
 Work is tracked in Linear under the **blog** team, project _"Migrate WordPress → Payload CMS + Neon Postgres"_, Milestone 1 (issues BLO-68 through BLO-75).
