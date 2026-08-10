@@ -1,4 +1,4 @@
-import { vercelPostgresAdapter } from '@payloadcms/db-vercel-postgres'
+import { postgresAdapter } from '@payloadcms/db-postgres'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import path from 'path'
 import { buildConfig } from 'payload'
@@ -33,7 +33,18 @@ export default buildConfig({
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },
-  db: vercelPostgresAdapter({
+  db: postgresAdapter({
+    // Plain node-postgres (pg) over a standard TCP connection, not
+    // @payloadcms/db-vercel-postgres's WebSocket-based Neon driver — that
+    // adapter depends on @vercel/postgres, which Vercel has stopped
+    // maintaining in favor of direct Neon integration, and it produced a
+    // recurring `wss://localhost/v2` / ECONNREFUSED connection failure both
+    // during Vercel's build step and intermittently at runtime (the same
+    // adapter code never failed once locally — this is specific to Vercel's
+    // serverless environment). This app runs as ordinary Node.js serverless
+    // functions (not Edge), which support plain TCP fine — there's no need
+    // for a WebSocket-based driver here at all.
+    //
     // Pinned explicitly rather than relying on the implicit default — the blog's
     // domain models (Post.id, Author.id, etc.) are typed as `number`, matching
     // WordPress's numeric ID convention, to avoid a type-signature ripple across

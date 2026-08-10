@@ -33,7 +33,7 @@
     ]
   },
   "dependencies": {
-    "@payloadcms/db-vercel-postgres": "3.87.1",
+    "@payloadcms/db-postgres": "3.87.1",
     "@payloadcms/next": "3.87.1",
     "@payloadcms/plugin-multi-tenant": "3.87.1",
     "@payloadcms/plugin-seo": "3.87.1",
