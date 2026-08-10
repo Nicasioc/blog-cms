@@ -95,6 +95,17 @@ Payload ships breaking changes frequently, and this template's `main`-branch sou
 - Search `payloadcms.com/docs` (via `WebSearch`/`WebFetch`) for the API in question.
 - Cross-check against `node_modules/payload/package.json`'s `version` and the relevant package's own `.d.ts`/`exports` map when something doesn't typecheck — that's the ground truth for what's actually installed, faster than searching when the docs and installed version disagree.
 
+## Internal Docs
+
+`docs/` has deeper reference material than this file — read it before making non-trivial changes:
+
+- `docs/architecture.md` — collections, access control model, hooks, plugins, the database adapter, the admin import map.
+- `docs/environment-variables.md` — every env var, what reads it, and the `DATABASE_URL`-not-`POSTGRES_URL` gotcha.
+- `docs/database-and-migrations.md` — Neon branch structure, the migration-only workflow, why migrations don't run in Vercel's build step.
+- `docs/deployment.md` — Vercel project setup, both GitHub Actions workflows.
+- `docs/tenant-onboarding.md` — how to seed a new tenant today, and the trap to avoid.
+- `docs/incidents.md` — chronological root-cause log for every non-obvious guardrail above; read this if a rule here seems overly cautious and you want to know why it exists.
+
 ## Project Tracking
 
-Work is tracked in Linear under the **blog** team, project _"Migrate WordPress → Payload CMS + Neon Postgres"_, Milestone 1 (issues BLO-68 through BLO-75).
+Work is tracked in Linear under the **blog** team, project _"Migrate WordPress → Payload CMS + Neon Postgres"_, Milestone 1 (issues BLO-68 through BLO-75, all Done as of this writing; BLO-83/84/85 are open non-blocking follow-ups). Milestone 2 (BLO-76 onward) is in the blog repo.
