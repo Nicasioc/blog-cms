@@ -38,6 +38,13 @@ export default buildConfig({
     // from WordPress to Payload. If a future Payload version changes its default
     // id type, this stays serial regardless.
     idType: 'serial',
+    // Migrations-only, in every environment (including local dev) — Payload's
+    // docs warn against mixing dev-mode push with migrations on the same
+    // project. Forcing this off everywhere means schema changes only ever
+    // happen through committed, reviewed migration files (`payload
+    // migrate:create`), never silently via whichever connection string
+    // happens to be in scope when a command runs.
+    push: false,
     pool: {
       connectionString: process.env.POSTGRES_URL || '',
     },
