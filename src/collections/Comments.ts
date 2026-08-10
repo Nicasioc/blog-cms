@@ -3,6 +3,7 @@ import { approvedOrLoggedIn } from '../access/approvedOrLoggedIn'
 import { publicRead } from '../access/publicRead'
 import { forcePendingOnCreate } from '../hooks/forcePendingOnCreate'
 import { enforceTenantAssignment } from '../hooks/enforceTenantAssignment'
+import { revalidateOnCommentApproval } from '../hooks/revalidateOnCommentApproval'
 
 export const Comments: CollectionConfig = {
   slug: 'comments',
@@ -19,6 +20,7 @@ export const Comments: CollectionConfig = {
     // it only restricts authenticated non-admin users from assigning a tenant
     // other than their own.
     beforeChange: [forcePendingOnCreate, enforceTenantAssignment],
+    afterChange: [revalidateOnCommentApproval],
   },
   fields: [
     {

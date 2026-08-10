@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 import { publishedOrLoggedIn } from '../access/publishedOrLoggedIn'
 import { enforceTenantAssignment } from '../hooks/enforceTenantAssignment'
+import { revalidatePostOrPage, revalidatePostOrPageOnDelete } from '../hooks/revalidatePostOrPage'
 
 export const Posts: CollectionConfig = {
   slug: 'posts',
@@ -13,6 +14,8 @@ export const Posts: CollectionConfig = {
   },
   hooks: {
     beforeChange: [enforceTenantAssignment],
+    afterChange: [revalidatePostOrPage],
+    afterDelete: [revalidatePostOrPageOnDelete],
   },
   versions: {
     drafts: true,
