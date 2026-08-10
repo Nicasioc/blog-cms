@@ -1,10 +1,18 @@
 import type { CollectionConfig } from 'payload'
+import { publishedOrLoggedIn } from '../access/publishedOrLoggedIn'
+import { enforceTenantAssignment } from '../hooks/enforceTenantAssignment'
 
 export const Pages: CollectionConfig = {
   slug: 'pages',
   admin: {
     useAsTitle: 'title',
     defaultColumns: ['title', 'slug', '_status'],
+  },
+  access: {
+    read: publishedOrLoggedIn,
+  },
+  hooks: {
+    beforeChange: [enforceTenantAssignment],
   },
   versions: {
     drafts: true,

@@ -1,15 +1,18 @@
 import type { Payload } from 'payload'
+import { randomUUID } from 'crypto'
 
-let counter = 0
-
-/** Creates a tenant with a unique slug per call, for tests that need a valid tenant ID. */
+/**
+ * Creates a tenant with a unique slug per call, for tests that need a valid
+ * tenant ID. Uses a UUID rather than a counter/timestamp — vitest runs test
+ * files in parallel worker processes, so a per-file counter or Date.now()
+ * alone can collide across files running in the same millisecond.
+ */
 export const seedTenant = async (payload: Payload): Promise<number> => {
-  counter += 1
   const tenant = await payload.create({
     collection: 'tenants',
     data: {
-      name: `Test Tenant ${counter}`,
-      slug: `test-tenant-${counter}-${Date.now()}`,
+      name: `Test Tenant ${randomUUID()}`,
+      slug: `test-tenant-${randomUUID()}`,
       blogUrl: 'https://example.com',
       revalidateSecret: 'test-revalidate-secret-1234567890',
     },

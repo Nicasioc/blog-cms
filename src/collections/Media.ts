@@ -1,9 +1,14 @@
 import type { CollectionConfig } from 'payload'
+import { publicRead } from '../access/publicRead'
+import { enforceTenantAssignment } from '../hooks/enforceTenantAssignment'
 
 export const Media: CollectionConfig = {
   slug: 'media',
   access: {
-    read: () => true,
+    read: publicRead,
+  },
+  hooks: {
+    beforeChange: [enforceTenantAssignment],
   },
   fields: [
     {

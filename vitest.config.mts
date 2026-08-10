@@ -8,5 +8,8 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./vitest.setup.ts'],
     include: ['tests/int/**/*.int.spec.ts'],
+    // Default 5000ms is tight for tests with several sequential DB round trips
+    // against a remote Neon branch (CI's local Postgres container is faster).
+    testTimeout: 15000,
   },
 })
