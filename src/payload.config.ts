@@ -31,6 +31,13 @@ export default buildConfig({
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },
   db: vercelPostgresAdapter({
+    // Pinned explicitly rather than relying on the implicit default — the blog's
+    // domain models (Post.id, Author.id, etc.) are typed as `number`, matching
+    // WordPress's numeric ID convention, to avoid a type-signature ripple across
+    // src/domain, src/application, and src/app when the persistence layer swaps
+    // from WordPress to Payload. If a future Payload version changes its default
+    // id type, this stays serial regardless.
+    idType: 'serial',
     pool: {
       connectionString: process.env.POSTGRES_URL || '',
     },
