@@ -1,0 +1,21 @@
+name: Migrate Production
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    env:
+      POSTGRES_URL: ${{ secrets.PRODUCTION_POSTGRES_URL }}
+      PAYLOAD_SECRET: ${{ secrets.PRODUCTION_PAYLOAD_SECRET }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm payload migrate

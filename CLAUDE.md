@@ -54,6 +54,8 @@ Payload's own tooling (`vitest.config.mts`) is scoped to `tests/int/**/*.int.spe
 
 Unlike the blog repo, there's no centralized env module here — `payload.config.ts` reading `process.env.POSTGRES_URL` / `process.env.PAYLOAD_SECRET` / `process.env.BLOB_READ_WRITE_TOKEN` directly is Payload's own idiomatic bootstrap pattern, not a violation to fix. Keep env reads confined to `payload.config.ts` and don't scatter `process.env` access into collection/hook/access files — pass values down through config instead.
 
+**Local `.env`'s `POSTGRES_URL` must always point at the Neon `development` branch, never `production`.** This isn't a style preference — a real incident happened when a local command ran without an explicit override and picked up a production connection string sitting in `.env`, silently push-modifying production's schema. Get connection strings via the direct Neon API (`GET /projects/{id}/branches/{branch_id}/endpoints` + `/roles/{role}/reveal_password`, or `GET /projects/{id}/connection_uri?branch_id=...`) and verify the returned host against `neonctl branches list` before trusting it — `neonctl connection-string --branch-id <X>` was independently confirmed to return the wrong branch's connection string in this project.
+
 ## Linting and Formatting
 
 - `pnpm run lint` / `pnpm run lint:fix` — ESLint (`eslint-config-next`, flat config).
@@ -70,7 +72,15 @@ Runs `lint` + `typecheck` only — not the full test suite. `test:int` needs a l
 
 ### CI
 
-GitHub Actions (`.github/workflows/ci.yml`) runs on every push to `main` and every PR: lint + typecheck + format check in one job, `test:int` against a Postgres service container in another.
+GitHub Actions (`.github/workflows/ci.yml`) runs on every push to `main` and every PR: lint + typecheck + format check in one job, `payload migrate` against a fresh Postgres service container followed by `test:int` in another.
+
+### Database migrations and deployment
+
+**Schema changes are migration-only, everywhere** (`push: false` in `payload.config.ts`) — never rely on dev-mode auto-push, including locally. Any collection/field change: `payload migrate:create <name>` run locally against a Neon `development` branch (never `production` — see Environment Access below), review the generated SQL, commit the migration file.
+
+**Vercel's build step cannot run `payload migrate`** — this is a confirmed upstream limitation ([payloadcms/payload#14894](https://github.com/payloadcms/payload/issues/14894)): the Neon serverless driver's WebSocket connection doesn't work inside Vercel's build sandbox (fails with `wss://localhost/v2` / `ECONNREFUSED`), regardless of how correct the connection string is — confirmed by reproducing the exact same connection working fine locally with the identical credentials. `vercel.json`'s `buildCommand` is therefore just `pnpm build`, not the template's own `pnpm run ci` script.
+
+Instead, `.github/workflows/migrate-production.yml` runs `payload migrate` against production on every push to `main`, using `PRODUCTION_POSTGRES_URL`/`PRODUCTION_PAYLOAD_SECRET` repo secrets — a plain GitHub Actions runner has no such WebSocket restriction. **Known limitation**: this runs independently of (not gated before) Vercel's own auto-deploy on the same push, so there's a brief window where newly deployed code could hit a database that hasn't finished migrating yet. Low-stakes today (no production traffic), but worth revisiting — e.g. disabling Vercel's auto-deploy and triggering `vercel deploy --prod` from this same workflow after a successful migration — before this matters for real.
 
 ### Commit Message Convention
 
