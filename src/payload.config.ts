@@ -20,6 +20,13 @@ import type { Config } from './payload-types'
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
+console.error(
+  '[diagnostic] POSTGRES_URL set:',
+  Boolean(process.env.POSTGRES_URL),
+  '| related env var names present:',
+  Object.keys(process.env).filter((k) => /POSTGRES|DATABASE|PG[A-Z_]*|NEON/i.test(k)),
+)
+
 export default buildConfig({
   admin: {
     user: Users.slug,
