@@ -20,13 +20,6 @@ import type { Config } from './payload-types'
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
-console.error(
-  '[diagnostic] POSTGRES_URL set:',
-  Boolean(process.env.POSTGRES_URL),
-  '| related env var names present:',
-  Object.keys(process.env).filter((k) => /POSTGRES|DATABASE|PG[A-Z_]*|NEON/i.test(k)),
-)
-
 export default buildConfig({
   admin: {
     user: Users.slug,
@@ -67,7 +60,15 @@ export default buildConfig({
     // happens to be in scope when a command runs.
     push: false,
     pool: {
-      connectionString: process.env.POSTGRES_URL || '',
+      // Vercel's Neon-Managed Integration provisions DATABASE_URL /
+      // DATABASE_URL_UNPOOLED, not POSTGRES_URL — the latter was a
+      // leftover from the with-vercel-postgres scaffold template's
+      // now-defunct "Vercel Postgres" naming convention. The old
+      // @vercel/postgres-based adapter has its own internal env
+      // auto-detection that happened to find DATABASE_URL regardless of
+      // what was passed here, masking this mismatch; plain pg.Pool uses
+      // exactly what's passed, so it silently fell back to localhost.
+      connectionString: process.env.DATABASE_URL || '',
     },
   }),
   plugins: [

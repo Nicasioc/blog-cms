@@ -8,7 +8,7 @@ jobs:
   migrate:
     runs-on: ubuntu-latest
     env:
-      POSTGRES_URL: ${{ secrets.PRODUCTION_POSTGRES_URL }}
+      DATABASE_URL: ${{ secrets.PRODUCTION_POSTGRES_URL }}
       PAYLOAD_SECRET: ${{ secrets.PRODUCTION_PAYLOAD_SECRET }}
     steps:
       - uses: actions/checkout@v4

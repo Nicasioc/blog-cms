@@ -37,7 +37,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     env:
-      POSTGRES_URL: postgres://payload:payload@localhost:5432/payload_test
+      DATABASE_URL: postgres://payload:payload@localhost:5432/payload_test
       PAYLOAD_SECRET: ci-test-secret-not-for-production-use
     steps:
       - uses: actions/checkout@v4

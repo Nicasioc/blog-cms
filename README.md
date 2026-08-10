@@ -38,7 +38,7 @@ After you click the `Deploy` button above, you'll want to have standalone copy o
 ### Development
 
 1. First [clone the repo](#clone) if you have not done so already
-2. `cd my-project && cp .env.example .env` to copy the example environment variables. You'll need to add the `POSTGRES_URL` and `BLOB_READ_WRITE_TOKEN` from your Vercel project to your `.env` if you want to use Vercel Blob and the Neon database that was created for you.
+2. `cd my-project && cp .env.example .env` to copy the example environment variables. You'll need to add the `DATABASE_URL` and `BLOB_READ_WRITE_TOKEN` from your Vercel project to your `.env` if you want to use Vercel Blob and the Neon database that was created for you.
 
    > _NOTE: If the connection string value includes `localhost` or `127.0.0.1`, the code will automatically use a normal postgres adapter instead of Vercel._. You can override this functionality by setting `forceUseVercelPostgres: true` if desired.
 
@@ -53,7 +53,7 @@ If you prefer to use Docker for local development instead of a local Postgres in
 
 To do so, follow these steps:
 
-- Modify the `POSTGRES_URL` in your `.env` file to `postgres://postgres@localhost:54320/<dbname>`
+- Modify the `DATABASE_URL` in your `.env` file to `postgres://postgres@localhost:54320/<dbname>`
 - Modify the `docker-compose.yml` file's `POSTGRES_DB` to match the above `<dbname>`
 - Run `docker-compose up` to start the database, optionally pass `-d` to run in the background.
 
