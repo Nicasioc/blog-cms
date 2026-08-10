@@ -67,7 +67,7 @@ describe('Posts', () => {
       },
     })
 
-    const found = await payload.findByID({ collection: 'posts', id: post.id })
+    const found = await payload.findByID({ collection: 'posts', id: post.id, depth: 0 })
 
     expect(found._status).toBe('published')
     expect(found.categories).toEqual([category.id])

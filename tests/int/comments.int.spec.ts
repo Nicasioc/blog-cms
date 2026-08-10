@@ -68,7 +68,7 @@ describe('Comments', () => {
       },
     })
 
-    const found = await payload.findByID({ collection: 'comments', id: reply.id })
+    const found = await payload.findByID({ collection: 'comments', id: reply.id, depth: 0 })
 
     expect(found.parent).toBe(parent.id)
   })
