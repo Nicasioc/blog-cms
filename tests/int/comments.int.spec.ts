@@ -3,18 +3,21 @@ import config from '@/payload.config'
 
 import { describe, it, beforeAll, expect } from 'vitest'
 import { lexicalContent } from '../helpers/lexicalContent'
+import { seedTenant } from '../helpers/seedTenant'
 
 let payload: Payload
 let postId: number
+let tenantId: number
 
 describe('Comments', () => {
   beforeAll(async () => {
     const payloadConfig = await config
     payload = await getPayload({ config: payloadConfig })
+    tenantId = await seedTenant(payload)
 
     const author = await payload.create({
       collection: 'authors',
-      data: { name: 'Comment Test Author', slug: 'comment-test-author' },
+      data: { name: 'Comment Test Author', slug: 'comment-test-author', tenant: tenantId },
     })
     const post = await payload.create({
       collection: 'posts',
@@ -23,6 +26,7 @@ describe('Comments', () => {
         slug: 'comment-test-post',
         content: lexicalContent('Body.'),
         author: author.id,
+        tenant: tenantId,
         _status: 'published',
       },
     })
@@ -38,6 +42,7 @@ describe('Comments', () => {
         authorName: 'Reader One',
         authorEmail: 'reader-one@example.com',
         content: 'Great article!',
+        tenant: tenantId,
       },
     })
 
@@ -53,6 +58,7 @@ describe('Comments', () => {
         authorName: 'Reader Two',
         authorEmail: 'reader-two@example.com',
         content: 'Top-level comment.',
+        tenant: tenantId,
       },
     })
 
@@ -65,6 +71,7 @@ describe('Comments', () => {
         authorName: 'Reader Three',
         authorEmail: 'reader-three@example.com',
         content: 'A reply.',
+        tenant: tenantId,
       },
     })
 
@@ -83,6 +90,7 @@ describe('Comments', () => {
           authorName: 'Reader Four',
           authorEmail: 'not-an-email',
           content: 'Should fail.',
+          tenant: tenantId,
         },
       }),
     ).rejects.toThrow()

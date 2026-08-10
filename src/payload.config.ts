@@ -13,6 +13,9 @@ import { Posts } from './collections/Posts'
 import { Pages } from './collections/Pages'
 import { Comments } from './collections/Comments'
 import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
+import { multiTenantPlugin } from '@payloadcms/plugin-multi-tenant'
+import { seoPlugin } from '@payloadcms/plugin-seo'
+import type { Config } from './payload-types'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -55,6 +58,26 @@ export default buildConfig({
         media: true,
       },
       token: process.env.BLOB_READ_WRITE_TOKEN || '',
+    }),
+    multiTenantPlugin<Config>({
+      collections: {
+        authors: {},
+        categories: {},
+        tags: {},
+        posts: {},
+        pages: {},
+        comments: {},
+        media: {},
+      },
+      tenantsArrayField: {
+        includeDefaultField: true,
+      },
+      userHasAccessToAllTenants: (user) => Boolean(user?.roles?.includes('admin')),
+    }),
+    seoPlugin({
+      collections: ['posts', 'pages'],
+      uploadsCollection: 'media',
+      tabbedUI: true,
     }),
   ],
 })

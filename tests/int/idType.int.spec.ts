@@ -18,12 +18,17 @@ describe('id type', () => {
   })
 
   it('generates numeric (serial) ids, not UUIDs', async () => {
-    const category = await payload.create({
-      collection: 'categories',
-      data: { name: 'ID Type Test', slug: 'id-type-test' },
+    const tenant = await payload.create({
+      collection: 'tenants',
+      data: {
+        name: 'ID Type Test',
+        slug: 'id-type-test',
+        blogUrl: 'https://example.com',
+        revalidateSecret: 'test-revalidate-secret-1234567890',
+      },
     })
 
-    expect(typeof category.id).toBe('number')
-    expect(Number.isInteger(category.id)).toBe(true)
+    expect(typeof tenant.id).toBe('number')
+    expect(Number.isInteger(tenant.id)).toBe(true)
   })
 })

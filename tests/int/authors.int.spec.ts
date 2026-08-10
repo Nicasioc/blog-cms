@@ -2,13 +2,16 @@ import { getPayload, Payload } from 'payload'
 import config from '@/payload.config'
 
 import { describe, it, beforeAll, expect } from 'vitest'
+import { seedTenant } from '../helpers/seedTenant'
 
 let payload: Payload
+let tenantId: number
 
 describe('Authors', () => {
   beforeAll(async () => {
     const payloadConfig = await config
     payload = await getPayload({ config: payloadConfig })
+    tenantId = await seedTenant(payload)
   })
 
   it('creates and reads back an author', async () => {
@@ -18,6 +21,7 @@ describe('Authors', () => {
         name: 'Jane Doe',
         slug: 'jane-doe',
         description: 'Staff writer.',
+        tenant: tenantId,
       },
     })
 
@@ -33,13 +37,13 @@ describe('Authors', () => {
   it('rejects a duplicate slug', async () => {
     await payload.create({
       collection: 'authors',
-      data: { name: 'First Author', slug: 'duplicate-author-slug' },
+      data: { name: 'First Author', slug: 'duplicate-author-slug', tenant: tenantId },
     })
 
     await expect(
       payload.create({
         collection: 'authors',
-        data: { name: 'Second Author', slug: 'duplicate-author-slug' },
+        data: { name: 'Second Author', slug: 'duplicate-author-slug', tenant: tenantId },
       }),
     ).rejects.toThrow()
   })

@@ -3,18 +3,21 @@ import config from '@/payload.config'
 
 import { describe, it, beforeAll, expect } from 'vitest'
 import { lexicalContent } from '../helpers/lexicalContent'
+import { seedTenant } from '../helpers/seedTenant'
 
 let payload: Payload
 let authorId: number
+let tenantId: number
 
 describe('Posts', () => {
   beforeAll(async () => {
     const payloadConfig = await config
     payload = await getPayload({ config: payloadConfig })
+    tenantId = await seedTenant(payload)
 
     const author = await payload.create({
       collection: 'authors',
-      data: { name: 'Post Test Author', slug: 'post-test-author' },
+      data: { name: 'Post Test Author', slug: 'post-test-author', tenant: tenantId },
     })
     authorId = author.id
   })
@@ -28,6 +31,7 @@ describe('Posts', () => {
         slug: 'a-draft-post',
         content: lexicalContent('Draft body copy.'),
         author: authorId,
+        tenant: tenantId,
         _status: 'draft',
       },
     })
@@ -45,11 +49,11 @@ describe('Posts', () => {
   it('publishes a post with categories and tags', async () => {
     const category = await payload.create({
       collection: 'categories',
-      data: { name: 'Post Test Category', slug: 'post-test-category' },
+      data: { name: 'Post Test Category', slug: 'post-test-category', tenant: tenantId },
     })
     const tag = await payload.create({
       collection: 'tags',
-      data: { name: 'Post Test Tag', slug: 'post-test-tag' },
+      data: { name: 'Post Test Tag', slug: 'post-test-tag', tenant: tenantId },
     })
 
     const post = await payload.create({
@@ -63,6 +67,7 @@ describe('Posts', () => {
         categories: [category.id],
         tags: [tag.id],
         publishedAt: new Date().toISOString(),
+        tenant: tenantId,
         _status: 'published',
       },
     })
@@ -82,6 +87,7 @@ describe('Posts', () => {
         slug: 'duplicate-post-slug',
         content: lexicalContent('First.'),
         author: authorId,
+        tenant: tenantId,
         _status: 'published',
       },
     })
@@ -94,6 +100,7 @@ describe('Posts', () => {
           slug: 'duplicate-post-slug',
           content: lexicalContent('Second.'),
           author: authorId,
+          tenant: tenantId,
           _status: 'published',
         },
       }),

@@ -2,19 +2,27 @@ import { getPayload, Payload } from 'payload'
 import config from '@/payload.config'
 
 import { describe, it, beforeAll, expect } from 'vitest'
+import { seedTenant } from '../helpers/seedTenant'
 
 let payload: Payload
+let tenantId: number
 
 describe('Categories', () => {
   beforeAll(async () => {
     const payloadConfig = await config
     payload = await getPayload({ config: payloadConfig })
+    tenantId = await seedTenant(payload)
   })
 
   it('creates and reads back a category', async () => {
     const category = await payload.create({
       collection: 'categories',
-      data: { name: 'Politics', slug: 'politics', description: 'Political coverage.' },
+      data: {
+        name: 'Politics',
+        slug: 'politics',
+        description: 'Political coverage.',
+        tenant: tenantId,
+      },
     })
 
     const found = await payload.findByID({ collection: 'categories', id: category.id })
@@ -28,12 +36,18 @@ describe('Tags', () => {
   beforeAll(async () => {
     const payloadConfig = await config
     payload = await getPayload({ config: payloadConfig })
+    tenantId = await seedTenant(payload)
   })
 
   it('creates and reads back a tag', async () => {
     const tag = await payload.create({
       collection: 'tags',
-      data: { name: 'Elections', slug: 'elections', description: 'Election coverage.' },
+      data: {
+        name: 'Elections',
+        slug: 'elections',
+        description: 'Election coverage.',
+        tenant: tenantId,
+      },
     })
 
     const found = await payload.findByID({ collection: 'tags', id: tag.id })
