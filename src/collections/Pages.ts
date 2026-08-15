@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { lexicalHTMLField } from '@payloadcms/richtext-lexical'
 import { publishedOrLoggedIn } from '../access/publishedOrLoggedIn'
 import { enforceTenantAssignment } from '../hooks/enforceTenantAssignment'
 import { revalidatePostOrPage, revalidatePostOrPageOnDelete } from '../hooks/revalidatePostOrPage'
@@ -38,5 +39,6 @@ export const Pages: CollectionConfig = {
       type: 'richText',
       required: true,
     },
+    lexicalHTMLField({ htmlFieldName: 'contentHtml', lexicalFieldName: 'content' }),
   ],
 }

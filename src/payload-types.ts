@@ -270,6 +270,7 @@ export interface Post {
     };
     [k: string]: unknown;
   };
+  contentHtml?: string | null;
   publishedAt?: string | null;
   featuredImage?: (number | null) | Media;
   author: number | Author;
@@ -311,6 +312,7 @@ export interface Page {
     };
     [k: string]: unknown;
   };
+  contentHtml?: string | null;
   meta?: {
     title?: string | null;
     description?: string | null;
@@ -555,6 +557,7 @@ export interface PostsSelect<T extends boolean = true> {
   slug?: T;
   excerpt?: T;
   content?: T;
+  contentHtml?: T;
   publishedAt?: T;
   featuredImage?: T;
   author?: T;
@@ -580,6 +583,7 @@ export interface PagesSelect<T extends boolean = true> {
   title?: T;
   slug?: T;
   content?: T;
+  contentHtml?: T;
   meta?:
     | T
     | {
