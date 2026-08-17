@@ -106,4 +106,42 @@ describe('Posts', () => {
       }),
     ).rejects.toThrow()
   })
+
+  it('defaults featured to false and excludes it from a featured:true query', async () => {
+    const unfeatured = await payload.create({
+      collection: 'posts',
+      data: {
+        title: 'Not Featured',
+        slug: 'not-featured-post',
+        content: lexicalContent('Not featured body copy.'),
+        author: authorId,
+        tenant: tenantId,
+        _status: 'published',
+      },
+    })
+    const featured = await payload.create({
+      collection: 'posts',
+      data: {
+        title: 'Featured',
+        slug: 'featured-post',
+        content: lexicalContent('Featured body copy.'),
+        author: authorId,
+        tenant: tenantId,
+        featured: true,
+        _status: 'published',
+      },
+    })
+
+    expect(unfeatured.featured).toBe(false)
+    expect(featured.featured).toBe(true)
+
+    const { docs } = await payload.find({
+      collection: 'posts',
+      where: { featured: { equals: true } },
+      depth: 0,
+    })
+
+    expect(docs.map((doc) => doc.id)).toContain(featured.id)
+    expect(docs.map((doc) => doc.id)).not.toContain(unfeatured.id)
+  })
 })

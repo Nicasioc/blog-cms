@@ -8,7 +8,7 @@ export const Posts: CollectionConfig = {
   slug: 'posts',
   admin: {
     useAsTitle: 'title',
-    defaultColumns: ['title', 'slug', '_status', 'publishedAt'],
+    defaultColumns: ['title', 'slug', '_status', 'publishedAt', 'featured'],
   },
   access: {
     read: publishedOrLoggedIn,
@@ -51,6 +51,15 @@ export const Posts: CollectionConfig = {
         date: {
           pickerAppearance: 'dayAndTime',
         },
+      },
+    },
+    {
+      name: 'featured',
+      type: 'checkbox',
+      defaultValue: false,
+      admin: {
+        position: 'sidebar',
+        description: 'Show this post in the homepage hero carousel.',
       },
     },
     {

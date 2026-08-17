@@ -272,6 +272,10 @@ export interface Post {
   };
   contentHtml?: string | null;
   publishedAt?: string | null;
+  /**
+   * Show this post in the homepage hero carousel.
+   */
+  featured?: boolean | null;
   featuredImage?: (number | null) | Media;
   author: number | Author;
   categories?: (number | Category)[] | null;
@@ -559,6 +563,7 @@ export interface PostsSelect<T extends boolean = true> {
   content?: T;
   contentHtml?: T;
   publishedAt?: T;
+  featured?: T;
   featuredImage?: T;
   author?: T;
   categories?: T;
