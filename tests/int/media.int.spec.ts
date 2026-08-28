@@ -67,8 +67,9 @@ describe('cloudinaryAdapter pure helpers', () => {
   })
 
   it('maps extensions to a Cloudinary resource type and a content type', () => {
-    expect(resourceTypeForExt('pdf')).toBe('image')
+    expect(resourceTypeForExt('png')).toBe('image')
     expect(resourceTypeForExt('mp4')).toBe('video')
+    expect(resourceTypeForExt('pdf')).toBe('raw')
     expect(resourceTypeForExt('zip')).toBe('raw')
     expect(contentTypeForExt('svg')).toBe('image/svg+xml')
     expect(contentTypeForExt('png')).toBeUndefined()
