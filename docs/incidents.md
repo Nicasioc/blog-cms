@@ -63,3 +63,17 @@ Chronological record of significant bugs/incidents during this project's setup, 
 **Fix**: re-copied the correct value (confirmed via `pnpm payload migrate:status` showing both migrations applied, and the seed script reporting "Tenant already exists" rather than creating a new one). `.env` was reverted to `development` immediately afterward.
 
 **Follow-up** (tracked as BLO-84, BLO-85, both non-blocking): clean up the stray tenant/user row left in the wrong database, and replace the ad-hoc "temporarily edit `.env` and hand-copy from the dashboard" pattern with a controlled `workflow_dispatch` path using the existing production GitHub secrets — see `docs/tenant-onboarding.md`.
+
+## 7. Vercel Blob → Cloudinary for media storage (2026-08-28)
+
+**Change**: replaced `@payloadcms/storage-vercel-blob` with an in-repo Cloudinary storage adapter (`src/storage/`) built on `@payloadcms/plugin-cloud-storage`. Motivation was vendor migration only — no Cloudinary transformations, plain passthrough delivery.
+
+**Why hand-rolled, not `payload-storage-cloudinary`**: that community plugin (a) **throws at config load when credentials are absent**, which would break CI's `payload migrate` + `test:int` and `migrate-production.yml` (both run with no storage creds); (b) always injects ~8 schema columns (and re-declares `filesize`); (c) hard-sets `disablePayloadAccessControl`, turning `doc.url` into a raw `res.cloudinary.com` URL — a blog-frontend behavior change. It also pulls `@payloadcms/plugin-cloud-storage` at a newer minor than the repo's exact-`3.87.1` pin. The in-repo wrapper instead mirrors `vercelBlobStorage`'s `!token` contract: **missing any `CLOUDINARY_*` var → the plugin is a no-op and Payload falls back to local-disk storage**, so CI and the production-migrate workflow are unaffected.
+
+**Schema cost**: one nullable column, `media.hosting_id` (migration `20260828_223549_add_media_hosting_id`), holding the Cloudinary `public_id`. The column name is deliberately provider-agnostic so a future image-host swap doesn't need another migration. `handleUpload` persists it; `handleDelete` / `staticHandler` read it rather than re-deriving a URL, which keeps delivery correct for `raw` assets (PDF/zip) and multi-dot filenames. The field is declared on `Media.ts` (not via `adapter.fields`) so the schema is identical whether or not the plugin is enabled.
+
+**Gotcha 1 — restricted API key**: the first API key provided could `ping` and read the Admin API but returned `403 "Request forbidden due to missing permissions (actions=[\"create\"])"` on every upload. Cloudinary keys can be permission-scoped; a media-storage key needs `create`. Verified by isolating: Admin API `ping`/`resources` worked, `uploader.upload` 403'd. Fixed by upgrading the key's permissions.
+
+**Gotcha 2 — dynamic folder mode**: the account is in `folder_mode: "dynamic"`. The adapter encodes the tenant folder into `public_id` (`media/<tenantId>/<file>`), so **delivery URLs are correct**, but assets show as flat names like `media/2/foo` in the Cloudinary Media Library rather than nested folders. Acceptable for delivery; pass `asset_folder` as a follow-up if UI folders are wanted.
+
+**Reminder**: swapping the storage plugin changed the generated Admin UI import map — `pnpm payload generate:importmap` was re-run and the `VercelBlobClientUploadHandler` entry dropped (see incident #4).

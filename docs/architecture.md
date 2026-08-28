@@ -5,7 +5,7 @@ This is a standalone Payload CMS service backing every white-label tenant blog. 
 ```
 Payload CMS (this repo, Next.js-native, Admin UI + REST/GraphQL API)
   ├─ Neon Postgres (one shared project, two branches: development / production)
-  ├─ Vercel Blob (media storage)
+  ├─ Cloudinary (media storage — per-tenant folders)
   └─ @payloadcms/plugin-multi-tenant (tenant field + admin switcher)
         │  REST API, per-tenant API key auth
         ▼
@@ -19,25 +19,26 @@ src/
   collections/   One file per collection (CollectionConfig)
   access/        Reusable Access functions, composed into collections
   hooks/         Reusable hook functions, composed into collections
+  storage/       In-repo Cloudinary storage adapter, built on @payloadcms/plugin-cloud-storage
   migrations/    Committed, reviewed SQL migrations (never auto-generated at runtime)
   payload.config.ts
 ```
 
-There's no `fields/`, `application/`, or `services/` layer here — this is a single-purpose Payload app, not a layered domain app like the blog repo. Collection files own their own field definitions inline; `access/` and `hooks/` exist purely to avoid repeating the same function across multiple collections.
+There's no `fields/`, `application/`, or `services/` layer here — this is a single-purpose Payload app, not a layered domain app like the blog repo. Collection files own their own field definitions inline; `access/` and `hooks/` exist purely to avoid repeating the same function across multiple collections. `storage/` is the one piece of non-config support code, wired only from `payload.config.ts`.
 
 ## Collections
 
-| Collection   | Tenant-scoped?            | Notes                                                                                                                          |
-| ------------ | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| `Tenants`    | —                         | No `access` override — uses Payload's default (`Boolean(user)`, any authenticated user). No tenant field on itself, obviously. |
-| `Users`      | via `tenants` array field | `auth.useAPIKey: true`. `roles` is `hasMany` select (`admin` \| `editor`), default `['editor']`. `versions: false`.            |
-| `Authors`    | yes                       | Public byline info, separate from `Users` (a `Users` row is a login; an `Authors` row is a public-facing byline).              |
-| `Categories` | yes                       |                                                                                                                                |
-| `Tags`       | yes                       |                                                                                                                                |
-| `Posts`      | yes                       | `versions: { drafts: true }` — native Payload drafts, `_status: 'draft' \| 'published'`. Content is Lexical richText.          |
-| `Pages`      | yes                       | Same drafts/versions model as Posts.                                                                                           |
-| `Comments`   | yes                       | `status` defaults to `pending`, forced there on create regardless of what's submitted (see Hooks below).                       |
-| `Media`      | yes                       | Backed by `@payloadcms/storage-vercel-blob`.                                                                                   |
+| Collection   | Tenant-scoped?            | Notes                                                                                                                                                                                                                                                                                                                                                             |
+| ------------ | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Tenants`    | —                         | No `access` override — uses Payload's default (`Boolean(user)`, any authenticated user). No tenant field on itself, obviously.                                                                                                                                                                                                                                    |
+| `Users`      | via `tenants` array field | `auth.useAPIKey: true`. `roles` is `hasMany` select (`admin` \| `editor`), default `['editor']`. `versions: false`.                                                                                                                                                                                                                                               |
+| `Authors`    | yes                       | Public byline info, separate from `Users` (a `Users` row is a login; an `Authors` row is a public-facing byline).                                                                                                                                                                                                                                                 |
+| `Categories` | yes                       |                                                                                                                                                                                                                                                                                                                                                                   |
+| `Tags`       | yes                       |                                                                                                                                                                                                                                                                                                                                                                   |
+| `Posts`      | yes                       | `versions: { drafts: true }` — native Payload drafts, `_status: 'draft' \| 'published'`. Content is Lexical richText.                                                                                                                                                                                                                                             |
+| `Pages`      | yes                       | Same drafts/versions model as Posts.                                                                                                                                                                                                                                                                                                                              |
+| `Comments`   | yes                       | `status` defaults to `pending`, forced there on create regardless of what's submitted (see Hooks below).                                                                                                                                                                                                                                                          |
+| `Media`      | yes                       | Backed by Cloudinary via a thin in-repo adapter on `@payloadcms/plugin-cloud-storage` (`src/storage/`). Assets stored per tenant at `media/<tenantId>/<filename>`; the host's asset id (currently the Cloudinary `public_id`) is kept on a hidden, provider-agnostic `hostingId` field. `doc.url` stays the `/api/media/file/...` proxy (access control left on). |
 
 Tenant scoping on the six tenant-scoped collections (`authors`, `categories`, `tags`, `posts`, `pages`, `comments`, `media`) comes from `@payloadcms/plugin-multi-tenant`, wired in `payload.config.ts`:
 
@@ -87,7 +88,7 @@ Three reusable `Access` functions in `src/access/`, composed per-collection:
 
 Configured in `payload.config.ts`, in this order:
 
-1. **`vercelBlobStorage`** — media storage adapter for the `media` collection.
+1. **`cloudinaryStorage`** (in-repo wrapper, `src/storage/cloudinaryStorage.ts`) — Cloudinary media storage for the `media` collection, built on `@payloadcms/plugin-cloud-storage`. No-ops when any `CLOUDINARY_*` credential is missing (CI, `migrate-production.yml`, local dev without an account), falling back to Payload's local-disk storage — the same on/off contract the previous `@payloadcms/storage-vercel-blob` plugin had.
 2. **`multiTenantPlugin`** — tenant field + admin tenant switcher (see Collections above).
 3. **`seoPlugin`** — adds a `meta` group (`title`/`description`/`image`) to `posts` and `pages`, tabbed UI in the admin.
 
@@ -101,4 +102,4 @@ Configured in `payload.config.ts`, in this order:
 
 ## Admin UI import map
 
-`src/app/(payload)/admin/importMap.js` is a **generated file** listing every client component the Admin UI needs (from Payload core, plus every plugin/feature in use). It is not regenerated automatically — run `pnpm payload generate:importmap` any time a plugin or custom component that registers Admin UI pieces is added, changed, or removed, and commit the result. Forgetting this produces `getFromImportMap: PayloadComponent not found in importMap` at runtime and breaks the Admin UI (see `docs/incidents.md`).
+`src/app/(payload)/admin/importMap.js` is a **generated file** listing every client component the Admin UI needs (from Payload core, plus every plugin/feature in use). It is not regenerated automatically — run `pnpm payload generate:importmap` any time a plugin or custom component that registers Admin UI pieces is added, changed, or removed, and commit the result. Forgetting this produces `getFromImportMap: PayloadComponent not found in importMap` at runtime and breaks the Admin UI (see `docs/incidents.md`). The Blob→Cloudinary swap removed the `VercelBlobClientUploadHandler` entry; the in-repo Cloudinary adapter registers no client component.
