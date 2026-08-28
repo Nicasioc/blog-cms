@@ -5,7 +5,7 @@
 One Vercel project (`blog-cms`), deployed via the GitHub integration on every push to `main`. Connected integrations:
 
 - **Neon-Managed Integration** — provisions `DATABASE_URL`/`DATABASE_URL_UNPOOLED` (see `docs/environment-variables.md` for why it's `DATABASE_URL` and not `POSTGRES_URL`).
-- **Vercel Blob** — provisions `BLOB_READ_WRITE_TOKEN`, backing the `media` collection's storage adapter.
+- **Cloudinary** — media storage for the `media` collection. Not an auto-provisioned Vercel resource: `CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` are set by hand in the Vercel dashboard (Production **and** Preview — env vars bake in at build time). Without all three the storage plugin no-ops and Payload falls back to local-disk storage.
 
 `vercel.json`:
 

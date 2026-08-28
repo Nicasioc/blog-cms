@@ -193,6 +193,7 @@ export interface Media {
   id: number;
   tenant?: (number | null) | Tenant;
   alt: string;
+  hostingId?: string | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -490,6 +491,7 @@ export interface UsersSelect<T extends boolean = true> {
 export interface MediaSelect<T extends boolean = true> {
   tenant?: T;
   alt?: T;
+  hostingId?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;

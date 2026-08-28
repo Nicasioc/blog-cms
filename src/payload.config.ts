@@ -12,7 +12,7 @@ import { Tags } from './collections/Tags'
 import { Posts } from './collections/Posts'
 import { Pages } from './collections/Pages'
 import { Comments } from './collections/Comments'
-import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
+import { cloudinaryStorage } from './storage/cloudinaryStorage'
 import { multiTenantPlugin } from '@payloadcms/plugin-multi-tenant'
 import { seoPlugin } from '@payloadcms/plugin-seo'
 import type { Config } from './payload-types'
@@ -72,11 +72,17 @@ export default buildConfig({
     },
   }),
   plugins: [
-    vercelBlobStorage({
+    cloudinaryStorage({
       collections: {
         media: true,
       },
-      token: process.env.BLOB_READ_WRITE_TOKEN || '',
+      folder: 'media',
+      // Passed through as `undefined` when unset (not `|| ''`): the presence of
+      // all three credentials is the plugin's on/off switch — the same contract
+      // the old @payloadcms/storage-vercel-blob plugin had with its token.
+      cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+      apiKey: process.env.CLOUDINARY_API_KEY,
+      apiSecret: process.env.CLOUDINARY_API_SECRET,
     }),
     multiTenantPlugin<Config>({
       collections: {

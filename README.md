@@ -1,6 +1,6 @@
 # Payload Blank Starter
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/payloadcms/payload/tree/main/templates/with-vercel-postgres&project-name=payload-project&env=PAYLOAD_SECRET&build-command=pnpm%20run%20ci&stores=%5B%7B%22type%22:%22postgres%22%7D,%7B%22type%22:%22blob%22%7D%5D)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/payloadcms/payload/tree/main/templates/with-vercel-postgres&project-name=payload-project&env=PAYLOAD_SECRET&build-command=pnpm%20run%20ci&stores=%5B%7B%22type%22:%22postgres%22%7D%5D)
 
 This template comes configured with the bare minimum to get started on anything you need.
 
@@ -13,13 +13,11 @@ From this point on you can access your admin panel at `/admin` of your app URL, 
 
 ### Services
 
-This project uses the following services integrated into Vercel which you will need to click "Add" and "Connect" for:
+This project uses:
 
-Neon Database - Postgres-based cloud database used to host your data
+Neon Database - Postgres-based cloud database used to host your data. Integrated into Vercel — click "Add" and "Connect"; the connection variables are set up automatically.
 
-Vercel Blob Storage - object storage used to host your files such as images and videos
-
-The connection variables will automatically be setup for you on Vercel when these services are connected.
+Cloudinary - image/video CDN + storage for uploaded media. Configured outside Vercel: create the account, then set `CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` in the Vercel project (Production and Preview).
 
 #### Secrets
 
@@ -38,7 +36,7 @@ After you click the `Deploy` button above, you'll want to have standalone copy o
 ### Development
 
 1. First [clone the repo](#clone) if you have not done so already
-2. `cd my-project && cp .env.example .env` to copy the example environment variables. You'll need to add the `DATABASE_URL` and `BLOB_READ_WRITE_TOKEN` from your Vercel project to your `.env` if you want to use Vercel Blob and the Neon database that was created for you.
+2. `cd my-project && cp .env.example .env` to copy the example environment variables. Set `DATABASE_URL` to your Neon **development** branch. To send media uploads to Cloudinary rather than local disk, also set the three `CLOUDINARY_*` variables (otherwise the storage plugin no-ops and uploads land on local disk).
 
    > _NOTE: If the connection string value includes `localhost` or `127.0.0.1`, the code will automatically use a normal postgres adapter instead of Vercel._. You can override this functionality by setting `forceUseVercelPostgres: true` if desired.
 
