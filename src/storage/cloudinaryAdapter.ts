@@ -5,8 +5,6 @@ import { v2 as cloudinary } from 'cloudinary'
 const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365
 
 const VIDEO_EXT = new Set(['mp4', 'webm', 'mov', 'm4v', 'mkv', 'avi', 'ogv'])
-// `pdf` delivered as an `image` resource so Cloudinary returns `application/pdf`
-// rather than the `application/octet-stream` it uses for every `raw` asset.
 const IMAGE_EXT = new Set([
   'jpg',
   'jpeg',
@@ -19,15 +17,18 @@ const IMAGE_EXT = new Set([
   'tif',
   'bmp',
   'ico',
-  'pdf',
 ])
+// PDF and ZIP go through as `raw`, not `image`: Cloudinary blocks delivery of
+// PDF/ZIP `image` resources by default (401 unless the account opts in), whereas
+// `raw` delivery always works. `staticHandler` restores the real Content-Type
+// from MIME_BY_EXT since `raw` is otherwise served as `application/octet-stream`.
 const MIME_BY_EXT: Record<string, string> = {
-  pdf: 'application/pdf',
-  svg: 'image/svg+xml',
-  zip: 'application/zip',
-  txt: 'text/plain',
   csv: 'text/csv',
   json: 'application/json',
+  pdf: 'application/pdf',
+  svg: 'image/svg+xml',
+  txt: 'text/plain',
+  zip: 'application/zip',
 }
 
 export type CloudinaryAdapterConfig = {
