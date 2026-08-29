@@ -79,3 +79,39 @@ Chronological record of significant bugs/incidents during this project's setup, 
 **Gotcha 3 — PDF/ZIP delivery blocked for `image` resources**: PDFs were first uploaded as `resource_type: 'image'` (so Cloudinary would report `application/pdf`), but Cloudinary **blocks delivery of PDF/ZIP `image` assets by default** — the `/api/media/file/<pdf>` proxy got a `401` from `res.cloudinary.com` (surfacing as a `502`). Fixed in the adapter, not the account: PDF and ZIP now go through as `resource_type: 'raw'` (never blocked), and `staticHandler` restores the real `Content-Type` from an extension→MIME map since `raw` is otherwise served as `application/octet-stream`. `staticHandler` HTTP behaviour was then verified end-to-end against a live dev server + real Cloudinary: PNG/SVG/PDF all `200` with the right `Content-Type` (SVG `image/svg+xml` + `script-src 'none'` CSP; PDF `application/pdf` + inline `Content-Disposition`), `Range` → `206` + `Content-Range`, `If-None-Match` → `304`.
 
 **Reminder**: swapping the storage plugin changed the generated Admin UI import map — `pnpm payload generate:importmap` was re-run and the `VercelBlobClientUploadHandler` entry dropped (see incident #4).
+
+## 8. Security review — re-enabling Vercel protection behind a custom domain (BLO-83, 2026-08-29)
+
+[BLO-83](https://linear.app/vex-agency/issue/BLO-83). Vercel "Vercel Authentication" was
+disabled globally on `blog-cms` during setup because it gates the whole deployment before
+Payload's access control runs, breaking the tenant blogs' public REST reads. Now that
+`blog-cms` has a custom domain (`admin.vex-agency.com`), protection was re-enabled as
+**Standard Protection** (`prod_deployment_urls_and_all_previews`): the immutable
+`*.vercel.app` deployment URLs and all preview deployments require the `vex-agency` team's
+SSO; the production custom domain stays public for the blog. The blog's `PAYLOAD_API_URL`
+was repointed from `blog-cms-snowy.vercel.app` to `admin.vex-agency.com` first (env var +
+`next.config.ts` rewrite fallback) so there was no outage window.
+
+**Access-control review** (Payload's rules are now the only layer in front of the public
+REST API):
+
+- **Accepted, follow-up filed** — `publicRead` (`() => true`) on `authors`/`categories`/
+  `tags`/`media` and `publishedOrLoggedIn` on `posts`/`pages` are **not tenant-scoped for
+  anonymous requests**. `payloadClient` reads content anonymously and self-scopes with a
+  `tenant` `where` clause; the CMS does not enforce it. So the public API lets anyone
+  enumerate every white-label tenant's authors/taxonomy/media (and any tenant's _published_
+  posts/pages). Low sensitivity (sports-blog content), and preview/deployment URLs are now
+  SSO-locked, so this was accepted for now; the real fix (require the per-tenant API key on
+  all reads + a `baseListFilter` so a scoped key only sees its own tenant) is a follow-up.
+- **Fixed — anonymous comment tenancy.** `Comments.create` is public and
+  `enforceTenantAssignment` no-ops for anonymous requests, so a public POST could set
+  `tenant` to any id while `post` pointed at another tenant's post. New `beforeChange` hook
+  `src/hooks/deriveCommentTenant.ts` derives `tenant` from the referenced post on create
+  and drops any client value.
+- **Fixed — GraphQL surface.** The playground/introspection are already off in production
+  by Payload's defaults, but the `POST /api/graphql` endpoint was live and unused (the blog
+  is REST-only). `graphQL: { disable: true }` in `payload.config.ts` makes it return `404`.
+- **Noted, no change** — login lockout runs on Payload defaults (`maxLoginAttempts: 5`,
+  `lockTime: 10m`); `Comments.authorEmail` has field-level `read: user-only` so emails
+  aren't leaked; `enforceTenantAssignment` still guards authenticated non-admin users
+  (covered by `tests/int/accessControl.int.spec.ts`).
