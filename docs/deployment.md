@@ -15,7 +15,13 @@ One Vercel project (`blog-cms`), deployed via the GitHub integration on every pu
 
 Plain `pnpm build` (not `pnpm run ci`) — migrations are deliberately **not** run as part of Vercel's build. See `docs/database-and-migrations.md` for why.
 
-**Deployment protection**: Vercel Authentication (SSO) was disabled on this project so the REST API is reachable by tenant blog apps without needing a bypass token — SSO protection blocks _all_ traffic at the platform level, before Payload's own access control ever runs, which defeats the point of `publicRead`/`publishedOrLoggedIn` access rules. Tracked for a follow-up security review: BLO-83.
+### Deployment protection (BLO-83)
+
+**Public domain:** `admin.vex-agency.com` — the tenant blogs read the REST API here (their `PAYLOAD_API_URL`; `next/image` proxies media through this host). This domain is the CMS's only intended public surface.
+
+**Vercel Authentication:** enabled, mode **Standard Protection** (`prod_deployment_urls_and_all_previews`). This gates the immutable per-deployment URLs (`blog-<hash>-vex-agency.vercel.app`) and every preview deployment behind the `vex-agency` team's SSO. Assigned production domains are exempt — so `admin.vex-agency.com` stays public. SSO can't be path-scoped, which is why it's set to exempt the custom domain rather than `all`; the blogs talk to Payload purely over REST, so any platform-level gate on that host would break `publicRead`/`publishedOrLoggedIn` before Payload's own access control runs.
+
+**Residual / TODO:** Vercel also treats the `.vercel.app` _named_ aliases (`blog-cms-snowy`, `blog-cms-vex-agency`, `blog-cms-git-main-vex-agency`) as production domains, so Standard Protection leaves them publicly reachable too. To make `admin.vex-agency.com` the sole public entry point, remove those `.vercel.app` domains from **blog-cms → Settings → Domains** (leaving only the custom domain). Until then the CMS API is still anonymously reachable via those aliases — Payload's own access control (`publicRead` etc.) is what protects the data; see `docs/incidents.md` #8 for that review.
 
 **Env vars are baked in at build time**, not read live from the dashboard on every request. If a dashboard value changes (e.g. Neon rotates a compute endpoint), it only takes effect on the _next_ deployment — the currently-running one keeps using whatever was current when it was built. This matters when debugging "but the dashboard says X" — check what was actually live at the deployment's build time, not just the dashboard's current state.
 

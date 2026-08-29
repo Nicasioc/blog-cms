@@ -29,6 +29,13 @@ export default buildConfig({
   },
   collections: [Users, Media, Tenants, Authors, Categories, Tags, Posts, Pages, Comments],
   editor: lexicalEditor(),
+  // Tenant blogs consume this CMS over the REST API only; nothing uses GraphQL.
+  // With Vercel SSO scoped to the *.vercel.app URLs (see docs/deployment.md), the
+  // public REST surface is defended solely by Payload access control — drop the
+  // unused GraphQL endpoint rather than maintain a second surface. (BLO-83)
+  graphQL: {
+    disable: true,
+  },
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),

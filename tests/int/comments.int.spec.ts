@@ -95,4 +95,23 @@ describe('Comments', () => {
       }),
     ).rejects.toThrow()
   })
+
+  it('derives tenant from the post, ignoring a client-supplied tenant on an anonymous create', async () => {
+    const otherTenantId = await seedTenant(payload)
+
+    const comment = await payload.create({
+      collection: 'comments',
+      draft: false,
+      overrideAccess: false,
+      data: {
+        post: postId,
+        authorName: 'Sneaky Reader',
+        authorEmail: 'sneaky@example.com',
+        content: 'Trying to file this under another tenant.',
+        tenant: otherTenantId,
+      },
+    })
+
+    expect(comment.tenant).toBe(tenantId)
+  })
 })

@@ -2,6 +2,7 @@ import type { CollectionConfig } from 'payload'
 import { approvedOrLoggedIn } from '../access/approvedOrLoggedIn'
 import { publicRead } from '../access/publicRead'
 import { forcePendingOnCreate } from '../hooks/forcePendingOnCreate'
+import { deriveCommentTenant } from '../hooks/deriveCommentTenant'
 import { enforceTenantAssignment } from '../hooks/enforceTenantAssignment'
 import { revalidateOnCommentApproval } from '../hooks/revalidateOnCommentApproval'
 
@@ -16,10 +17,12 @@ export const Comments: CollectionConfig = {
     create: publicRead,
   },
   hooks: {
-    // enforceTenantAssignment no-ops for anonymous submissions (no req.user) —
-    // it only restricts authenticated non-admin users from assigning a tenant
-    // other than their own.
-    beforeChange: [forcePendingOnCreate, enforceTenantAssignment],
+    // On create: force status to 'pending', then derive `tenant` from the
+    // referenced post (public submitters can't be trusted to set it, and
+    // enforceTenantAssignment no-ops for anonymous requests). enforceTenantAssignment
+    // still guards authenticated non-admin users assigning a tenant other than
+    // their own.
+    beforeChange: [forcePendingOnCreate, deriveCommentTenant, enforceTenantAssignment],
     afterChange: [revalidateOnCommentApproval],
   },
   fields: [
