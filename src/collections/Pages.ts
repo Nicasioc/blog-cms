@@ -3,6 +3,7 @@ import { lexicalHTMLField } from '@payloadcms/richtext-lexical'
 import { publishedOrLoggedIn } from '../access/publishedOrLoggedIn'
 import { enforceTenantAssignment } from '../hooks/enforceTenantAssignment'
 import { revalidatePostOrPage, revalidatePostOrPageOnDelete } from '../hooks/revalidatePostOrPage'
+import { slugField } from '../fields/slugField'
 
 export const Pages: CollectionConfig = {
   slug: 'pages',
@@ -27,13 +28,7 @@ export const Pages: CollectionConfig = {
       type: 'text',
       required: true,
     },
-    {
-      name: 'slug',
-      type: 'text',
-      required: true,
-      unique: true,
-      index: true,
-    },
+    slugField,
     {
       name: 'content',
       type: 'richText',

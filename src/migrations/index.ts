@@ -3,6 +3,7 @@ import * as migration_20260810_022215_add_multi_tenant_and_seo from './20260810_
 import * as migration_20260815_182859_add_content_html_fields from './20260815_182859_add_content_html_fields';
 import * as migration_20260817_160641_add_featured_to_posts from './20260817_160641_add_featured_to_posts';
 import * as migration_20260828_223549_add_media_hosting_id from './20260828_223549_add_media_hosting_id';
+import * as migration_20260909_002556_lowercase_taxonomy_slugs from './20260909_002556_lowercase_taxonomy_slugs';
 
 export const migrations = [
   {
@@ -28,6 +29,11 @@ export const migrations = [
   {
     up: migration_20260828_223549_add_media_hosting_id.up,
     down: migration_20260828_223549_add_media_hosting_id.down,
-    name: '20260828_223549_add_media_hosting_id'
+    name: '20260828_223549_add_media_hosting_id',
+  },
+  {
+    up: migration_20260909_002556_lowercase_taxonomy_slugs.up,
+    down: migration_20260909_002556_lowercase_taxonomy_slugs.down,
+    name: '20260909_002556_lowercase_taxonomy_slugs',
   },
 ];
