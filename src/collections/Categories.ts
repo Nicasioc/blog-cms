@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 import { publicRead } from '../access/publicRead'
 import { enforceTenantAssignment } from '../hooks/enforceTenantAssignment'
+import { slugField } from '../fields/slugField'
 
 export const Categories: CollectionConfig = {
   slug: 'categories',
@@ -19,13 +20,7 @@ export const Categories: CollectionConfig = {
       type: 'text',
       required: true,
     },
-    {
-      name: 'slug',
-      type: 'text',
-      required: true,
-      unique: true,
-      index: true,
-    },
+    slugField,
     {
       name: 'description',
       type: 'textarea',
