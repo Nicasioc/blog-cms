@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { staffOnly } from '../access/roles'
 import { publicRead } from '../access/publicRead'
 import { enforceTenantAssignment } from '../hooks/enforceTenantAssignment'
 
@@ -9,6 +10,9 @@ export const Authors: CollectionConfig = {
   },
   access: {
     read: publicRead,
+    create: staffOnly,
+    update: staffOnly,
+    delete: staffOnly,
   },
   hooks: {
     beforeChange: [enforceTenantAssignment],

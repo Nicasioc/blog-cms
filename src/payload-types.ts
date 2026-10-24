@@ -137,7 +137,7 @@ export interface UserAuthOperations {
  */
 export interface User {
   id: number;
-  roles: ('admin' | 'editor')[];
+  roles: ('admin' | 'editor' | 'service')[];
   tenants?:
     | {
         tenant: number | Tenant;

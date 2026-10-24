@@ -1,6 +1,7 @@
 import { getPayload, Payload } from 'payload'
 import config from '@/payload.config'
 
+import { randomUUID } from 'crypto'
 import { describe, it, beforeAll, expect } from 'vitest'
 import { lexicalContent } from '../helpers/lexicalContent'
 import { seedTenant } from '../helpers/seedTenant'
@@ -113,5 +114,90 @@ describe('Comments', () => {
     })
 
     expect(comment.tenant).toBe(tenantId)
+  })
+  describe('service and staff reads (BLO-200)', () => {
+    const seedUser = async (roles: ('editor' | 'service')[]) => {
+      const user = await payload.create({
+        collection: 'users',
+        data: {
+          email: `comments-${roles[0]}-${randomUUID()}@example.com`,
+          password: 'test-password-123',
+          roles,
+          tenants: [{ tenant: tenantId }],
+        },
+      })
+      return { ...user, collection: 'users' as const }
+    }
+
+    const seedComment = (content: string) =>
+      payload.create({
+        collection: 'comments',
+        data: {
+          post: postId,
+          authorName: 'Reader',
+          authorEmail: 'private-reader@example.com',
+          content,
+          tenant: tenantId,
+        },
+      })
+
+    it('hides pending comments and authorEmail from a service user', async () => {
+      const service = await seedUser(['service'])
+      const pending = await seedComment('service-pending')
+      const approved = await seedComment('service-approved')
+      await payload.update({
+        collection: 'comments',
+        id: approved.id,
+        data: { status: 'approved' },
+      })
+
+      const result = await payload.find({
+        collection: 'comments',
+        overrideAccess: false,
+        user: service,
+        where: { post: { equals: postId } },
+      })
+
+      expect(result.docs.map((doc) => doc.id)).toContain(approved.id)
+      expect(result.docs.map((doc) => doc.id)).not.toContain(pending.id)
+      expect(result.docs.every((doc) => doc.authorEmail === undefined)).toBe(true)
+    })
+
+    it('shows pending comments and authorEmail to an editor', async () => {
+      const editor = await seedUser(['editor'])
+      const pending = await seedComment('editor-pending')
+
+      const result = await payload.findByID({
+        collection: 'comments',
+        id: pending.id,
+        overrideAccess: false,
+        user: editor,
+      })
+
+      expect(result.authorEmail).toBe('private-reader@example.com')
+    })
+
+    it('rejects a service user updating or deleting a comment', async () => {
+      const service = await seedUser(['service'])
+      const comment = await seedComment('service-cannot-moderate')
+
+      await expect(
+        payload.update({
+          collection: 'comments',
+          id: comment.id,
+          overrideAccess: false,
+          user: service,
+          data: { status: 'approved' },
+        }),
+      ).rejects.toThrow()
+      await expect(
+        payload.delete({
+          collection: 'comments',
+          id: comment.id,
+          overrideAccess: false,
+          user: service,
+        }),
+      ).rejects.toThrow()
+    })
   })
 })

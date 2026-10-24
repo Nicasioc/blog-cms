@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { isStaff, staffOnly } from '../access/roles'
 import { approvedOrLoggedIn } from '../access/approvedOrLoggedIn'
 import { publicRead } from '../access/publicRead'
 import { forcePendingOnCreate } from '../hooks/forcePendingOnCreate'
@@ -15,6 +16,8 @@ export const Comments: CollectionConfig = {
   access: {
     read: approvedOrLoggedIn,
     create: publicRead,
+    update: staffOnly,
+    delete: staffOnly,
   },
   hooks: {
     // On create: force status to 'pending', then derive `tenant` from the
@@ -47,7 +50,7 @@ export const Comments: CollectionConfig = {
       type: 'email',
       required: true,
       access: {
-        read: ({ req: { user } }) => Boolean(user),
+        read: ({ req: { user } }) => isStaff(user),
       },
       admin: {
         description: 'Not exposed on public reads.',

@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { staffOnly } from '../access/roles'
 import { publicRead } from '../access/publicRead'
 import { enforceTenantAssignment } from '../hooks/enforceTenantAssignment'
 
@@ -6,6 +7,9 @@ export const Media: CollectionConfig = {
   slug: 'media',
   access: {
     read: publicRead,
+    create: staffOnly,
+    update: staffOnly,
+    delete: staffOnly,
   },
   hooks: {
     beforeChange: [enforceTenantAssignment],
@@ -34,5 +38,20 @@ export const Media: CollectionConfig = {
       },
     },
   ],
-  upload: true,
+  upload: {
+    // Defense in depth: the storage adapter already serves SVG with
+    // `script-src 'none'` and unknown types as octet-stream + nosniff, but
+    // there's no reason to accept arbitrary file types in the first place.
+    mimeTypes: [
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+      'image/avif',
+      'image/gif',
+      'image/svg+xml',
+      'application/pdf',
+      'video/mp4',
+      'video/webm',
+    ],
+  },
 }

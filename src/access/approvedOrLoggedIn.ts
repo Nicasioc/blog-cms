@@ -1,8 +1,12 @@
 import type { Access } from 'payload'
+import { isStaff } from './roles'
 
-/** Logged-in users (moderators) see every comment; anonymous requests only see approved ones. */
+/**
+ * Staff (moderators) see every comment; anonymous requests and service (API-key)
+ * users only see approved ones.
+ */
 export const approvedOrLoggedIn: Access = ({ req: { user } }) => {
-  if (user) return true
+  if (isStaff(user)) return true
 
   return {
     status: {

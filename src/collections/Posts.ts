@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { staffOnly } from '../access/roles'
 import { lexicalHTMLField } from '@payloadcms/richtext-lexical'
 import { publishedOrLoggedIn } from '../access/publishedOrLoggedIn'
 import { enforceTenantAssignment } from '../hooks/enforceTenantAssignment'
@@ -13,6 +14,9 @@ export const Posts: CollectionConfig = {
   },
   access: {
     read: publishedOrLoggedIn,
+    create: staffOnly,
+    update: staffOnly,
+    delete: staffOnly,
   },
   hooks: {
     beforeChange: [enforceTenantAssignment],

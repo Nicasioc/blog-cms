@@ -1,3 +1,6 @@
+// @vitest-environment node
+// Payload's upload mime check sniffs the buffer with `file-type`, which
+// misreads Buffers created outside jsdom's realm. Media doesn't need a DOM.
 import { readFileSync } from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -190,5 +193,33 @@ describe('Media collection', () => {
       `media/${tenantAId}/to-delete`,
       expect.objectContaining({ resource_type: 'image' }),
     )
+  })
+  describe('mime type allow-list (BLO-201)', () => {
+    const upload = (name: string, mimetype: string, data: Buffer) =>
+      payload.create({
+        collection: 'media',
+        data: { alt: name, tenant: tenantAId },
+        file: { data, mimetype, name, size: data.length },
+      })
+
+    it.each([
+      ['page.html', 'text/html', Buffer.from('<script>alert(1)</script>')],
+      ['notes.txt', 'text/plain', Buffer.from('hello')],
+    ])('rejects %s', async (name, mimetype, data) => {
+      await expect(upload(name, mimetype, data)).rejects.toThrow()
+    })
+
+    it('accepts a pdf', async () => {
+      const pdf = readFileSync(path.resolve(dirname, '../fixtures/tiny.pdf'))
+      const doc = await upload('allowed.pdf', 'application/pdf', pdf)
+
+      expect(doc.filename).toBe('allowed.pdf')
+    })
+
+    it('accepts a png', async () => {
+      const doc = await upload('allowed.png', 'image/png', pixel)
+
+      expect(doc.filename).toBe('allowed.png')
+    })
   })
 })

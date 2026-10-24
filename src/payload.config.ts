@@ -12,6 +12,7 @@ import { Tags } from './collections/Tags'
 import { Posts } from './collections/Posts'
 import { Pages } from './collections/Pages'
 import { Comments } from './collections/Comments'
+import { adminOnlyField, isAdmin } from './access/roles'
 import { cloudinaryStorage } from './storage/cloudinaryStorage'
 import { multiTenantPlugin } from '@payloadcms/plugin-multi-tenant'
 import { seoPlugin } from '@payloadcms/plugin-seo'
@@ -101,10 +102,20 @@ export default buildConfig({
         comments: {},
         media: {},
       },
+      // The plugin limits which user docs are reachable, not which fields — without
+      // field access an editor could add tenants to their own `tenants` array.
       tenantsArrayField: {
         includeDefaultField: true,
+        arrayFieldAccess: {
+          create: adminOnlyField,
+          update: adminOnlyField,
+        },
+        tenantFieldAccess: {
+          create: adminOnlyField,
+          update: adminOnlyField,
+        },
       },
-      userHasAccessToAllTenants: (user) => Boolean(user?.roles?.includes('admin')),
+      userHasAccessToAllTenants: (user) => isAdmin(user),
     }),
     seoPlugin({
       collections: ['posts', 'pages'],

@@ -4,6 +4,7 @@ import * as migration_20260815_182859_add_content_html_fields from './20260815_1
 import * as migration_20260817_160641_add_featured_to_posts from './20260817_160641_add_featured_to_posts';
 import * as migration_20260828_223549_add_media_hosting_id from './20260828_223549_add_media_hosting_id';
 import * as migration_20260909_002556_lowercase_taxonomy_slugs from './20260909_002556_lowercase_taxonomy_slugs';
+import * as migration_20261024_225536_add_service_role from './20261024_225536_add_service_role';
 
 export const migrations = [
   {
@@ -35,5 +36,10 @@ export const migrations = [
     up: migration_20260909_002556_lowercase_taxonomy_slugs.up,
     down: migration_20260909_002556_lowercase_taxonomy_slugs.down,
     name: '20260909_002556_lowercase_taxonomy_slugs',
+  },
+  {
+    up: migration_20261024_225536_add_service_role.up,
+    down: migration_20261024_225536_add_service_role.down,
+    name: '20261024_225536_add_service_role'
   },
 ];
