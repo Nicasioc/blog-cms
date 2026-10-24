@@ -1,7 +1,10 @@
 import { getPayload, Payload } from 'payload'
 import config from '@/payload.config'
 
+import { randomUUID } from 'crypto'
 import { describe, it, beforeAll, expect } from 'vitest'
+import { Users } from '@/collections/Users'
+import type { User } from '@/payload-types'
 import { lexicalContent } from '../helpers/lexicalContent'
 import { seedTenant } from '../helpers/seedTenant'
 
@@ -202,6 +205,228 @@ describe('Access control', () => {
           data: { name: 'Cross Tenant', slug: 'cross-tenant-category', tenant: tenantBId },
         }),
       ).rejects.toThrow()
+    })
+  })
+  describe('user privilege escalation (BLO-199)', () => {
+    const createUser = (
+      email: string,
+      roles: ('admin' | 'editor' | 'service')[],
+      tenantId: number,
+    ) =>
+      payload.create({
+        collection: 'users',
+        data: { email, password: 'test-password-123', roles, tenants: [{ tenant: tenantId }] },
+      })
+
+    const asUser = <T extends object>(user: T) => ({ ...user, collection: 'users' as const })
+
+    it("ignores an editor setting their own roles to ['admin']", async () => {
+      const editor = await createUser(
+        `esc-roles-${randomUUID()}@example.com`,
+        ['editor'],
+        tenantAId,
+      )
+
+      await payload.update({
+        collection: 'users',
+        id: editor.id,
+        overrideAccess: false,
+        user: asUser(editor),
+        data: { roles: ['admin'] },
+      })
+
+      const after = await payload.findByID({ collection: 'users', id: editor.id })
+      expect(after.roles).toEqual(['editor'])
+    })
+
+    it('ignores an editor adding a tenant to their own tenants array', async () => {
+      const editor = await createUser(
+        `esc-tenants-${randomUUID()}@example.com`,
+        ['editor'],
+        tenantAId,
+      )
+
+      await payload.update({
+        collection: 'users',
+        id: editor.id,
+        overrideAccess: false,
+        user: asUser(editor),
+        data: { tenants: [{ tenant: tenantAId }, { tenant: tenantBId }] },
+      })
+
+      const after = await payload.findByID({ collection: 'users', id: editor.id, depth: 0 })
+      expect(after.tenants?.map((row) => row.tenant)).toEqual([tenantAId])
+    })
+
+    it('lets an editor change their own password but not another users', async () => {
+      const editor = await createUser(`own-pass-${randomUUID()}@example.com`, ['editor'], tenantAId)
+      const peer = await createUser(`peer-${randomUUID()}@example.com`, ['editor'], tenantAId)
+
+      await expect(
+        payload.update({
+          collection: 'users',
+          id: editor.id,
+          overrideAccess: false,
+          user: asUser(editor),
+          data: { password: 'a-new-password-456' },
+        }),
+      ).resolves.toBeTruthy()
+
+      await expect(
+        payload.update({
+          collection: 'users',
+          id: peer.id,
+          overrideAccess: false,
+          user: asUser(editor),
+          data: { password: 'hijacked-password-789' },
+        }),
+      ).rejects.toThrow()
+    })
+
+    it('lets an admin change roles and tenants', async () => {
+      const admin = await createUser(`admin-${randomUUID()}@example.com`, ['admin'], tenantAId)
+      const target = await createUser(`target-${randomUUID()}@example.com`, ['editor'], tenantAId)
+
+      await payload.update({
+        collection: 'users',
+        id: target.id,
+        overrideAccess: false,
+        user: asUser(admin),
+        data: { roles: ['editor', 'service'], tenants: [{ tenant: tenantBId }] },
+      })
+
+      const after = await payload.findByID({ collection: 'users', id: target.id, depth: 0 })
+      expect(after.roles).toEqual(['editor', 'service'])
+      expect(after.tenants?.map((row) => row.tenant)).toEqual([tenantBId])
+    })
+
+    it('rejects user create and delete for non-admins', async () => {
+      const editor = await createUser(
+        `no-create-${randomUUID()}@example.com`,
+        ['editor'],
+        tenantAId,
+      )
+      const victim = await createUser(`victim-${randomUUID()}@example.com`, ['editor'], tenantAId)
+
+      await expect(
+        payload.create({
+          collection: 'users',
+          overrideAccess: false,
+          user: asUser(editor),
+          data: {
+            email: `new-${randomUUID()}@example.com`,
+            password: 'test-password-123',
+            roles: ['editor'],
+          },
+        }),
+      ).rejects.toThrow()
+      await expect(
+        payload.delete({
+          collection: 'users',
+          id: victim.id,
+          overrideAccess: false,
+          user: asUser(editor),
+        }),
+      ).rejects.toThrow()
+    })
+  })
+
+  describe('service role (BLO-200)', () => {
+    let service: User
+    let serviceUser: object
+
+    beforeAll(async () => {
+      service = await payload.create({
+        collection: 'users',
+        data: {
+          email: `service-${randomUUID()}@example.com`,
+          password: 'test-password-123',
+          roles: ['service'],
+          tenants: [{ tenant: tenantAId }],
+        },
+      })
+      serviceUser = { ...service, collection: 'users' }
+    })
+
+    it('cannot create, update or delete content', async () => {
+      const category = await payload.create({
+        collection: 'categories',
+        data: { name: 'Service Target', slug: 'service-target', tenant: tenantAId },
+      })
+
+      await expect(
+        payload.create({
+          collection: 'categories',
+          overrideAccess: false,
+          user: serviceUser as never,
+          data: { name: 'Nope', slug: 'service-nope', tenant: tenantAId },
+        }),
+      ).rejects.toThrow()
+      await expect(
+        payload.update({
+          collection: 'categories',
+          id: category.id,
+          overrideAccess: false,
+          user: serviceUser as never,
+          data: { name: 'Changed' },
+        }),
+      ).rejects.toThrow()
+      await expect(
+        payload.delete({
+          collection: 'categories',
+          id: category.id,
+          overrideAccess: false,
+          user: serviceUser as never,
+        }),
+      ).rejects.toThrow()
+    })
+
+    it("reads its own tenant but not another tenant's", async () => {
+      const own = await payload.find({
+        collection: 'tenants',
+        overrideAccess: false,
+        user: serviceUser as never,
+        where: { id: { equals: tenantAId } },
+      })
+      const other = await payload.find({
+        collection: 'tenants',
+        overrideAccess: false,
+        user: serviceUser as never,
+        where: { id: { equals: tenantBId } },
+      })
+
+      expect(own.docs).toHaveLength(1)
+      expect(other.docs).toHaveLength(0)
+    })
+
+    it('does not see draft posts', async () => {
+      await payload.create({
+        collection: 'posts',
+        draft: true,
+        data: {
+          title: 'Service Draft',
+          slug: 'service-draft-post',
+          content: lexicalContent('Draft.'),
+          author: authorId,
+          tenant: tenantAId,
+          _status: 'draft',
+        },
+      })
+
+      const result = await payload.find({
+        collection: 'posts',
+        overrideAccess: false,
+        user: serviceUser as never,
+        where: { slug: { equals: 'service-draft-post' } },
+      })
+
+      expect(result.docs).toHaveLength(0)
+    })
+
+    it('cannot log into the admin UI', () => {
+      const adminAccess = Users.access?.admin
+      expect(adminAccess).toBeDefined()
+      expect(adminAccess!({ req: { user: service } } as never)).toBe(false)
     })
   })
 })

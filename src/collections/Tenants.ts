@@ -1,7 +1,13 @@
 import type { CollectionConfig } from 'payload'
+import { staffOnly } from '../access/roles'
 
 export const Tenants: CollectionConfig = {
   slug: 'tenants',
+  access: {
+    create: staffOnly,
+    update: staffOnly,
+    delete: staffOnly,
+  },
   admin: {
     useAsTitle: 'name',
   },
