@@ -1,8 +1,9 @@
 import type { Payload } from 'payload'
 
 /**
- * POSTs {slug} to the tenant's own /api/revalidate webhook (unchanged from the
- * blog's existing route — it has no CMS-specific logic). Best-effort: a failed
+ * POSTs {slug} to the tenant's own /api/revalidate webhook, authenticating with
+ * `Authorization: Bearer <revalidateSecret>` (the secret is never put in the URL,
+ * where it would end up in request logs). Best-effort: a failed
  * webhook call shouldn't fail the save that triggered it, just gets logged.
  */
 export const triggerRevalidate = async ({
@@ -17,10 +18,12 @@ export const triggerRevalidate = async ({
   try {
     const tenant = await payload.findByID({ collection: 'tenants', id: tenantId })
 
-    const url = `${tenant.blogUrl}/api/revalidate?secret=${tenant.revalidateSecret}`
-    const res = await fetch(url, {
+    const res = await fetch(`${tenant.blogUrl}/api/revalidate`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${tenant.revalidateSecret}`,
+      },
       body: JSON.stringify({ slug }),
     })
 

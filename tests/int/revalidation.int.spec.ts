@@ -48,6 +48,18 @@ describe('Revalidation hooks', () => {
     vi.unstubAllGlobals()
   })
 
+  const expectRevalidateCall = (slug: string) => {
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${blogUrl}/api/revalidate`,
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({ Authorization: `Bearer ${revalidateSecret}` }),
+        body: JSON.stringify({ slug }),
+      }),
+    )
+    fetchMock.mock.calls.forEach(([url]) => expect(String(url)).not.toContain(revalidateSecret))
+  }
+
   it('fires the webhook when a post is published', async () => {
     await payload.create({
       collection: 'posts',
@@ -61,13 +73,7 @@ describe('Revalidation hooks', () => {
       },
     })
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      `${blogUrl}/api/revalidate?secret=${revalidateSecret}`,
-      expect.objectContaining({
-        method: 'POST',
-        body: JSON.stringify({ slug: 'published-revalidation-post' }),
-      }),
-    )
+    expectRevalidateCall('published-revalidation-post')
   })
 
   it('does not fire the webhook when a post is saved as a draft', async () => {
@@ -127,10 +133,7 @@ describe('Revalidation hooks', () => {
 
     await payload.delete({ collection: 'posts', id: post.id })
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      `${blogUrl}/api/revalidate?secret=${revalidateSecret}`,
-      expect.objectContaining({ body: JSON.stringify({ slug: 'deleted-revalidation-post' }) }),
-    )
+    expectRevalidateCall('deleted-revalidation-post')
   })
 
   it('fires the webhook with the post slug when a comment is approved, not on raw submission', async () => {
@@ -167,9 +170,6 @@ describe('Revalidation hooks', () => {
       data: { status: 'approved' },
     })
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      `${blogUrl}/api/revalidate?secret=${revalidateSecret}`,
-      expect.objectContaining({ body: JSON.stringify({ slug: 'comment-revalidation-post' }) }),
-    )
+    expectRevalidateCall('comment-revalidation-post')
   })
 })
