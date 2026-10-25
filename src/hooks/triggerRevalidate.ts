@@ -1,8 +1,9 @@
 import type { Payload } from 'payload'
 
 /**
- * POSTs {slug} to the tenant's own /api/revalidate webhook (unchanged from the
- * blog's existing route — it has no CMS-specific logic). Best-effort: a failed
+ * POSTs {slug} to the tenant's own /api/revalidate webhook, authenticating with
+ * `Authorization: Bearer <revalidateSecret>` (the secret is never put in the URL,
+ * where it would end up in request logs). Best-effort: a failed
  * webhook call shouldn't fail the save that triggered it, just gets logged.
  */
 export const triggerRevalidate = async ({
