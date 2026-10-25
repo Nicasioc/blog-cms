@@ -62,12 +62,16 @@ describe('Revalidation hooks', () => {
     })
 
     expect(fetchMock).toHaveBeenCalledWith(
-      `${blogUrl}/api/revalidate?secret=${revalidateSecret}`,
+      `${blogUrl}/api/revalidate`,
       expect.objectContaining({
         method: 'POST',
+        headers: expect.objectContaining({ Authorization: `Bearer ${revalidateSecret}` }),
         body: JSON.stringify({ slug: 'published-revalidation-post' }),
       }),
     )
+
+    const [calledUrl] = fetchMock.mock.calls[0]
+    expect(String(calledUrl)).not.toContain(revalidateSecret)
   })
 
   it('does not fire the webhook when a post is saved as a draft', async () => {
@@ -128,7 +132,7 @@ describe('Revalidation hooks', () => {
     await payload.delete({ collection: 'posts', id: post.id })
 
     expect(fetchMock).toHaveBeenCalledWith(
-      `${blogUrl}/api/revalidate?secret=${revalidateSecret}`,
+      `${blogUrl}/api/revalidate`,
       expect.objectContaining({ body: JSON.stringify({ slug: 'deleted-revalidation-post' }) }),
     )
   })
@@ -168,7 +172,7 @@ describe('Revalidation hooks', () => {
     })
 
     expect(fetchMock).toHaveBeenCalledWith(
-      `${blogUrl}/api/revalidate?secret=${revalidateSecret}`,
+      `${blogUrl}/api/revalidate`,
       expect.objectContaining({ body: JSON.stringify({ slug: 'comment-revalidation-post' }) }),
     )
   })

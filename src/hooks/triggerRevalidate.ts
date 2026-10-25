@@ -17,10 +17,12 @@ export const triggerRevalidate = async ({
   try {
     const tenant = await payload.findByID({ collection: 'tenants', id: tenantId })
 
-    const url = `${tenant.blogUrl}/api/revalidate?secret=${tenant.revalidateSecret}`
-    const res = await fetch(url, {
+    const res = await fetch(`${tenant.blogUrl}/api/revalidate`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${tenant.revalidateSecret}`,
+      },
       body: JSON.stringify({ slug }),
     })
 
